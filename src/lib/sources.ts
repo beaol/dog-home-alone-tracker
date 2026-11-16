@@ -31,7 +31,7 @@ export const SOURCES: Record<SourceId, Source> = {
       '“The main rule is to plan your absences to be shorter than the time it takes for your dog to become upset.”',
       'Start with many short separations that don’t cause anxiety, then increase the duration “by only a few seconds each session, or every couple of sessions.”',
       'Most anxious reactions happen in the first 40 minutes alone. Once the dog can handle 40 minutes, increase in bigger steps: “5-minute increments at first, then later 15-minute increments.”',
-      'A dog that is calm for 90 minutes can probably handle 4 hours; build toward longer absences over a few days.',
+      'A dog that is calm for 90 minutes can probably handle 4 to 8 hours. Start with 4 hours and build up to 8 over a few days.',
       '“During your sessions, be sure to wait a few minutes between absences.”',
       'Schedule: several sessions a day on weekends and twice-daily sessions on workdays.',
       'Mild cases may respond to counterconditioning, e.g. a food-stuffed toy that lasts 20–30 minutes, given as you leave and picked up when you return.',
@@ -65,7 +65,7 @@ export const SOURCES: Record<SourceId, Source> = {
       '“Never leave your dog so long that they start to become distressed.”',
       'Watch (or film) for less obvious signs too, like trembling, pacing or whining. Some dogs “suffer in silence.”',
       'Once you reach the stage of leaving through the door, vary how long you are out.',
-      'Dogs should not be left alone for more than four hours. If problems continue, talk to a vet or clinical behaviourist.',
+      'Dogs should not be left alone for more than four hours (the app shows this as a note past 4 hours). If problems continue, talk to a vet or clinical behaviourist.',
     ],
   },
   dogstrust: {

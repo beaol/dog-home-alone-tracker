@@ -17,7 +17,8 @@ const PRINCIPLES: { title: string; items: Reason[] }[] = [
     title: '2. Increase slowly, only after calm sessions',
     items: [
       { text: 'Increase only when the last absence was calm. After a setback, repeat a duration before increasing.', basis: 'source', sources: ['rspca', 'aspca', 'demartini-slow'] },
-      { text: 'Under 40 min: about +10% per step (min 5 s, max 3 min). From 40 min: +5 min. From 90 min: +15 min. The goal is 4 hours, the most the RSPCA and Dogs Trust recommend leaving a dog alone.', basis: 'app', sources: ['aspca', 'bluecross', 'rspca', 'dogstrust'] },
+      { text: 'Under 40 min: about +10% per step (min 5 s, max 3 min). From 40 min: +5 min. From 90 min: +15 min. From 4 hours: +1 hour, up to the goal of 8 hours (a full work day). The ASPCA says a dog that is calm for 90 minutes can probably handle 4–8 hours, starting with 4 and building to 8 over a few days.', basis: 'app', sources: ['aspca', 'bluecross'] },
+      { text: 'The RSPCA and Dogs Trust advise not leaving a dog alone for more than 4 hours. Past 4 hours the app shows this as a note and suggests breaking up long days with a midday walk or visit.', basis: 'source', sources: ['rspca', 'dogstrust'] },
       { text: 'Mix in an easy (shorter) session after three increases in a row, so absences vary in length.', basis: 'source', sources: ['vca', 'rspca'] },
     ],
   },
@@ -34,6 +35,7 @@ const PRINCIPLES: { title: string; items: Reason[] }[] = [
     items: [
       { text: 'Wait a few minutes between absences (the app uses 5 min), until your dog is relaxed.', basis: 'source', sources: ['aspca', 'vca'] },
       { text: 'About 20–30 minutes of training a day, 5 days a week with 2 days off. Rest helps learning; more training does not speed it up.', basis: 'source', sources: ['demartini-less'] },
+      { text: 'The 30-minute daily limit is for short practice absences done several in a row. It is not a limit on how long your dog can be alone. Once absences are 30 minutes or longer, the app plans one per day, all the way up to 8 hours.', basis: 'app', sources: ['demartini-less', 'aspca'] },
     ],
   },
   {

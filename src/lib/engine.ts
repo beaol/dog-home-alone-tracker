@@ -18,8 +18,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const BIG_STEP_FROM = 40 * MIN;
 /** ASPCA: after 90 minutes, 15-minute increments. */
 export const BIGGER_STEP_FROM = 90 * MIN;
-/** RSPCA / Dogs Trust: don't leave a dog alone for more than 4 hours. */
-export const MAX_ALONE = 4 * HOUR;
+/** ASPCA: after 90 calm minutes, start with 4 hours and build up to 8 over a few days. */
+export const LONG_STAGE_FROM = 4 * HOUR;
+/** Training goal: a full work day (ASPCA's upper end). */
+export const MAX_ALONE = 8 * HOUR;
+/** RSPCA / Dogs Trust welfare guidance: no more than 4 hours alone. Shown as a note, not a cap. */
+export const WELFARE_NOTE_FROM = 4 * HOUR;
 /** DeMartini: about 20–30 minutes of training a day. */
 export const DAILY_TRAINING_BUDGET = 30 * MIN;
 /** ASPCA: "wait a few minutes between absences". The app reads "a few" as at least 5. */
@@ -114,11 +118,21 @@ export function roundDuration(sec: number, mode: 'nearest' | 'down' = 'nearest')
 
 /** How much to add after calm sessions. */
 export function increaseStep(level: number): { add: number; reason: Reason } {
+  if (level >= LONG_STAGE_FROM) {
+    return {
+      add: HOUR,
+      reason: r(
+        'The ASPCA says to start with 4 hours and build up to 8 hours “over a few days.” The app spreads this over four calm sessions, adding 1 hour each time.',
+        'app',
+        'aspca',
+      ),
+    };
+  }
   if (level >= BIGGER_STEP_FROM) {
     return {
       add: 15 * MIN,
       reason: r(
-        'Past 90 minutes the ASPCA uses 15-minute steps. They also say a dog that is calm for 90 minutes can probably build up to 4 hours over a few days.',
+        'Past 90 minutes the ASPCA uses 15-minute steps. They also say a dog that is calm for 90 minutes can probably manage 4–8 hours.',
         'source',
         'aspca',
       ),
@@ -329,7 +343,8 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
     } else if (h.calmStreak >= required) {
       kind = 'increase';
       const { add, reason } = increaseStep(comfort);
-      target = comfort + add;
+      // From 40 min on, land on whole steps (45, 50 … 90 min, 1 h 45, 2 h …) instead of carrying an odd offset.
+      target = comfort >= BIG_STEP_FROM ? Math.floor(comfort / add) * add + add : comfort + add;
       reasons.push(
         r(
           h.recentStress
@@ -377,12 +392,26 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
     );
   }
 
-  // ---- 4 hour ceiling ----
+  // ---- 8 hour goal ----
   if (target >= MAX_ALONE) {
     target = MAX_ALONE;
     kind = 'goal';
     reasons.push(
-      r('The RSPCA and Dogs Trust say a dog shouldn’t be left alone for more than four hours. You’ve reached the training goal, so just keep up regular, calm absences.', 'source', 'rspca', 'dogstrust'),
+      r(
+        `${dog} has reached 8 hours, a full work day and the upper end the ASPCA describes. Keep absences calm and regular, and step back if stress signs return.`,
+        'source',
+        'aspca',
+      ),
+    );
+  }
+  if (target > WELFARE_NOTE_FROM) {
+    warnings.push(
+      r(
+        'Good to know: the RSPCA and Dogs Trust advise not leaving a dog alone for more than 4 hours. On long days, a midday walk, dog walker or neighbour visit breaks up the time alone.',
+        'source',
+        'rspca',
+        'dogstrust',
+      ),
     );
   }
 
@@ -486,7 +515,7 @@ function nextSessionTime(sorted: Attempt[], now: Date, target: number, lastStres
       reasons.push(
         target >= DAILY_TRAINING_BUDGET
           ? r(
-              `The next absence (${formatDuration(target)}) is longer than a typical day’s training (20–30 minutes in DeMartini’s program), so one absence a day is enough.`,
+              `The 30-minute daily limit is for short practice absences. At ${formatDuration(target)}, one absence a day is the whole day’s training, so the next one is tomorrow.`,
               'app',
               'demartini-less',
             )
