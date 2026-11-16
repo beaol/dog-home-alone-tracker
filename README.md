@@ -29,12 +29,11 @@ npm run typecheck && npx eslint src
 
 `app.json` has `experiments.baseUrl` set to `/dog-home-alone-tracker`. This must match the repo name, as must `src/lib/site.ts` and `public/manifest.json`.
 
-```sh
-npm run deploy   # exports to dist/ and pushes it to the gh-pages branch
-```
-
-Then go to GitHub → Settings → Pages → Source: *Deploy from a branch* → `gh-pages` / root. The site will be at
+Every push to `main` builds and deploys the app with GitHub Actions (`.github/workflows/deploy.yml`).
+One-time setup: go to GitHub → Settings → Pages → Source: **GitHub Actions**. The site will be at
 `https://beaol.github.io/dog-home-alone-tracker/`.
+
+To check the build locally, run `npm run export` (the output goes to `dist/`).
 
 ## Install on iPhone
 
