@@ -1,0 +1,14 @@
+{
+  "name": "Home Alone Trainer",
+  "short_name": "Home Alone",
+  "description": "Track your dog's home alone training and get the next step, based on trusted sources.",
+  "start_url": "/dog-home-alone-tracker/",
+  "scope": "/dog-home-alone-tracker/",
+  "display": "standalone",
+  "background_color": "#f4f3ef",
+  "theme_color": "#2a78d6",
+  "icons": [
+    { "src": "/dog-home-alone-tracker/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/dog-home-alone-tracker/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Home Alone Trainer",
+    "slug": "dog-home-alone-tracker",
+    "version": "1.0.0",
+    "scheme": "homealonetrainer",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#2a78d6",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/favicon.png",
+      "name": "Home Alone Trainer",
+      "shortName": "Home Alone"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "baseUrl": "/dog-home-alone-tracker"
+    }
+  }
+}
