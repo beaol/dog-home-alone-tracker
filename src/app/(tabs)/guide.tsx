@@ -26,7 +26,9 @@ const PRINCIPLES: { title: string; items: Reason[] }[] = [
     title: '3. After stress signs, step back',
     items: [
       { text: 'Go back to a duration your dog handled calmly, and progress more slowly.', basis: 'source', sources: ['rspca', 'bluecross', 'dogstrust'] },
-      { text: 'One or two brief signs: plan about 80% of the time the first sign appeared. More than that: about 50%. Two stressful sessions in a row: another 25% less. The next absence always ends before the time the dog got upset last time.', basis: 'app', sources: [] },
+      { text: 'Look for patterns, not a single moment. One brief sign after which the dog settles may not mean the dog went over threshold.', basis: 'source', sources: ['demartini-quiet'] },
+      { text: 'One single brief sign, then calm for at least a quarter of the session, with no signs in the 2 sessions before: back to the last calm duration, repeated until calm twice before increasing. If a sign comes back within the next 2 sessions, it counts as a pattern and the stricter rules below apply.', basis: 'app', sources: ['demartini-quiet', 'rspca', 'bluecross'] },
+      { text: 'Otherwise, one or two brief signs: plan about 80% of the time the first sign appeared. More than that: about 50%. Two stressful sessions in a row: another 25% less. The next absence ends before the time the dog got upset last time.', basis: 'app', sources: ['aspca'] },
       { text: 'Stop training for the day after distress. Regressions are normal and often come before progress.', basis: 'source', sources: ['vca', 'demartini-regress'] },
     ],
   },

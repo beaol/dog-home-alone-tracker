@@ -13,6 +13,7 @@ const KIND_ICON: Record<RecKind, string> = {
   start: '▶',
   increase: '▲',
   repeat: '●',
+  recheck: '↩',
   stepBack: '▼',
   easy: '◐',
   warmup: '↺',

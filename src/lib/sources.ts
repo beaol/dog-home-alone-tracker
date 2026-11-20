@@ -19,7 +19,8 @@ export type SourceId =
   | 'bluecross'
   | 'demartini-less'
   | 'demartini-regress'
-  | 'demartini-slow';
+  | 'demartini-slow'
+  | 'demartini-quiet';
 
 export const SOURCES: Record<SourceId, Source> = {
   aspca: {
@@ -120,6 +121,18 @@ export const SOURCES: Record<SourceId, Source> = {
     points: [
       'Real progress often looks like “repeating the same duration more than once,” “increasing time in very small increments,” and “adjusting or even stepping back on certain days.”',
       'Calm repetitions build on each other: “When it happens again, and then again, it begins to build.”',
+    ],
+  },
+  'demartini-quiet': {
+    id: 'demartini-quiet',
+    org: 'Malena DeMartini (separation anxiety specialist)',
+    title: 'The Quiet Signals: Understanding Subtle Signs of Separation Anxiety',
+    url: 'https://malenademartini.com/?p=32993',
+    points: [
+      '“Threshold isn’t the moment of explosion. It happens before the explosion.”',
+      '“You are not looking for a single ‘tell,’ you are looking for patterns and trends.”',
+      '“A whine in one dog may signal rising distress. A whine in another may simply be communication or anticipation.”',
+      'Video recording absences gives insight you can’t get in the moment. Ask what changed just before a sign appeared.',
     ],
   },
 };

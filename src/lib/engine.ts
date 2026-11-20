@@ -6,7 +6,7 @@
  * exact number. Reasons are tagged with `basis: 'source' | 'app'` so the UI can
  * show the difference honestly.
  */
-import type { Attempt } from './types';
+import { KIND_LABEL, type Attempt } from './types';
 import type { SourceId } from './sources';
 import { formatDuration } from './format';
 
@@ -40,7 +40,7 @@ export interface Reason {
   sources: SourceId[];
 }
 
-export type RecKind = 'start' | 'increase' | 'repeat' | 'stepBack' | 'easy' | 'warmup' | 'goal';
+export type RecKind = 'start' | 'increase' | 'repeat' | 'recheck' | 'stepBack' | 'easy' | 'warmup' | 'goal';
 export type Severity = 'none' | 'mild' | 'significant';
 
 export interface Recommendation {
@@ -86,6 +86,34 @@ export function severity(a: Attempt): Severity {
     a.events.length <= 2 &&
     a.events.every((e) => e.intensity === 'brief' && e.kind !== 'howl' && e.kind !== 'scratching');
   return mild ? 'mild' : 'significant';
+}
+
+/**
+ * One single brief sign, after which the dog stayed calm for a clear stretch of the session
+ * (at least a quarter of it, and at least 30 s), so we know the dog settled again.
+ */
+export function isIsolatedSign(a: Attempt): boolean {
+  if (a.events.length !== 1) return false;
+  const e = a.events[0];
+  if (e.intensity !== 'brief') return false;
+  const settledFor = a.durationSec - (e.atSec + (e.lastedSec ?? 0));
+  return settledFor >= Math.max(30, a.durationSec * 0.25);
+}
+
+/**
+ * isolated: a single brief sign the dog settled from, with no stress in the 2 sessions before
+ *           (DeMartini: look for patterns, not a single moment)
+ * mild / significant: see severity()
+ */
+export type StressClass = 'isolated' | 'mild' | 'significant';
+export const PATTERN_WINDOW = 2;
+
+export function classifyStress(sorted: Attempt[], i: number): StressClass | null {
+  const a = sorted[i];
+  if (!a.events.length) return null;
+  const recentStress = sorted.slice(Math.max(0, i - PATTERN_WINDOW), i).some((p) => p.events.length > 0);
+  if (isIsolatedSign(a) && !recentStress) return 'isolated';
+  return severity(a) === 'mild' ? 'mild' : 'significant';
 }
 
 export function attemptEnd(a: Attempt): Date {
@@ -170,6 +198,7 @@ interface HistoryState {
   consecutiveIncreases: number;
   recentStress: boolean;
   onsetTrend: number[];
+  lastClass: StressClass | null;
 }
 
 export function analyseHistory(sorted: Attempt[]): HistoryState {
@@ -179,6 +208,7 @@ export function analyseHistory(sorted: Attempt[]): HistoryState {
   let consecutiveIncreases = 0;
   const onsets: number[] = [];
   let lastStressIdx = -1;
+  let lastClass: StressClass | null = null;
 
   sorted.forEach((a, i) => {
     if (i > 0) {
@@ -189,6 +219,7 @@ export function analyseHistory(sorted: Attempt[]): HistoryState {
       }
     }
     const onset = stressOnset(a);
+    lastClass = classifyStress(sorted, i);
     if (onset === null) {
       consecutiveStress = 0;
       if (comfort === null || a.durationSec >= comfort * 0.95) {
@@ -200,9 +231,12 @@ export function analyseHistory(sorted: Attempt[]): HistoryState {
         consecutiveIncreases = 0;
       }
     } else {
-      const factor = severity(a) === 'mild' ? 0.8 : 0.5;
-      const cap = Math.max(5, Math.round(onset * factor));
-      comfort = comfort === null ? cap : Math.min(comfort, cap);
+      // An isolated sign keeps the last calm level: back to where the dog was last comfortable (RSPCA / Blue Cross).
+      if (!(lastClass === 'isolated' && comfort !== null)) {
+        const factor = lastClass === 'mild' || lastClass === 'isolated' ? 0.8 : 0.5;
+        const cap = Math.max(5, Math.round(onset * factor));
+        comfort = comfort === null ? cap : Math.min(comfort, cap);
+      }
       calmStreak = 0;
       consecutiveIncreases = 0;
       consecutiveStress++;
@@ -218,6 +252,7 @@ export function analyseHistory(sorted: Attempt[]): HistoryState {
     consecutiveIncreases,
     recentStress: lastStressIdx >= 0 && sorted.length - 1 - lastStressIdx < 4,
     onsetTrend: onsets.slice(-3),
+    lastClass,
   };
 }
 
@@ -255,7 +290,6 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
   const last = attempts[attempts.length - 1];
   const lastEnd = attemptEnd(last);
   const lastOnset = stressOnset(last);
-  const lastSeverity = severity(last);
   const daysSinceLast = (now.getTime() - lastEnd.getTime()) / DAY_MS;
   const comfort = roundDuration(h.comfort ?? last.durationSec, 'down');
 
@@ -280,6 +314,37 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
         'demartini-regress',
       ),
     );
+  } else if (lastOnset !== null && h.lastClass === 'isolated' && h.comfort !== null) {
+    // ---- one brief sign, then calm: back to the last calm duration ----
+    const e = last.events[0];
+    const settledFor = last.durationSec - (e.atSec + (e.lastedSec ?? 0));
+    kind = 'recheck';
+    target = comfort;
+    reasons.push(
+      r(
+        `Last time, ${dog} showed one brief sign (${KIND_LABEL[e.kind].toLowerCase()} at ${formatDuration(e.atSec)}) and then stayed calm for ${formatDuration(settledFor)}. DeMartini: “Threshold isn’t the moment of explosion. It happens before the explosion.” She says to look for “patterns and trends,” not “a single ‘tell’.”`,
+        'source',
+        'demartini-quiet',
+      ),
+      r(
+        `RSPCA: “go back a stage.” Blue Cross: “start from when they were last comfortable.” For ${dog} that is ${formatDuration(comfort)}, the last calm duration.`,
+        'source',
+        'rspca',
+        'bluecross',
+      ),
+      r(
+        `One sign followed by settling is treated as isolated: repeat ${formatDuration(comfort)} until ${dog} is calm twice before increasing. If any sign comes back in the next ${PATTERN_WINDOW} sessions, the app treats it as a pattern and plans absences shorter than the time the sign appeared (ASPCA’s main rule).`,
+        'app',
+        'aspca',
+      ),
+      r(
+        last.durationSec - e.atSec > 0 && e.atSec < comfort
+          ? `The sign came at ${formatDuration(e.atSec)}, a point ${dog} had already handled calmly, so the longer absence itself is unlikely to be the cause. If you have video, check what happened just before it (a noise, someone outside). DeMartini suggests asking what changed just before a sign.`
+          : 'If you have video, check what happened just before the sign. DeMartini suggests asking what changed just before a sign.',
+        'source',
+        'demartini-quiet',
+      ),
+    );
   } else if (lastOnset !== null) {
     // ---- last session had stress signs: step back ----
     kind = 'stepBack';
@@ -296,7 +361,7 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
         'rspca',
         'bluecross',
       ),
-      lastSeverity === 'mild'
+      h.lastClass === 'isolated' || h.lastClass === 'mild'
         ? r(
             `The signs were mild (one or two brief ones), so the app plans about 80% of the time the first sign appeared, or ${dog}’s last calm duration if that is shorter.`,
             'app',
@@ -417,7 +482,8 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
 
   target = roundDuration(target);
   // Never plan at or above the onset of the last stressful session
-  if (lastOnset !== null && target >= lastOnset) target = Math.max(5, roundDuration(lastOnset * 0.8));
+  // (Except after an isolated sign, where the plan is the last calm duration.)
+  if (lastOnset !== null && kind !== 'recheck' && target >= lastOnset) target = Math.max(5, roundDuration(lastOnset * 0.8));
 
   // ---- warnings ----
   if (h.onsetTrend.length === 3 && h.onsetTrend[0] > h.onsetTrend[1] && h.onsetTrend[1] > h.onsetTrend[2]) {
@@ -455,7 +521,9 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
               ? 'Warm up after the break'
               : kind === 'goal'
                 ? 'Goal reached: maintain'
-                : 'Start';
+                : kind === 'recheck'
+                  ? 'Back to the last calm duration'
+                  : 'Start';
 
   return {
     kind,
