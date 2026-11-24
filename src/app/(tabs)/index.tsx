@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Text, View } from 'react-native';
+import { ForecastCard } from '../../components/ForecastCard';
 import { ReasonList } from '../../components/ReasonList';
 import { Body, Button, Card, H1, H2, Label, Row, Screen } from '../../components/ui';
 import { recommend, type RecKind } from '../../lib/engine';
@@ -85,6 +86,8 @@ export default function PlanScreen() {
           <ReasonList reasons={rec.warnings} />
         </Card>
       )}
+
+      <ForecastCard attempts={data.attempts} now={now} dog={dog} />
 
       <Card>
         <H2>Why {formatDuration(rec.targetSec)}?</H2>

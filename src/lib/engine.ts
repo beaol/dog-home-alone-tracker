@@ -633,3 +633,57 @@ export function describeWhen(d: Date, now: Date): string {
   if (sameDay(d, addDays(now, 1))) return 'Tomorrow';
   return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
 }
+
+// ---------- forecast ----------
+
+export interface ForecastSession {
+  at: Date;
+  targetSec: number;
+  kind: RecKind;
+}
+export interface ForecastDay {
+  date: Date;
+  sessions: ForecastSession[];
+}
+
+/** Sessions start no earlier than this hour, and don't start at or after LATEST_HOUR. */
+const EARLIEST_HOUR = 7;
+const LATEST_HOUR = 21;
+
+/**
+ * Projects the next `days` calendar days (today included), assuming every session
+ * is done at the earliest time the app allows, hits its target exactly, and is calm.
+ * It runs the same `recommend()` rules over and over, so rest days, easy sessions and
+ * repeats show up exactly as the app would suggest them.
+ */
+export function forecast(attemptsIn: Attempt[], now: Date = new Date(), days = 5): ForecastDay[] {
+  const attempts = sortAttempts(attemptsIn);
+  const last = attempts[attempts.length - 1];
+  // Use the hour you usually train (your last session), within daytime.
+  const usualHour = last ? Math.min(LATEST_HOUR - 1, Math.max(EARLIEST_HOUR, new Date(last.startedAt).getHours())) : 9;
+  const end = startOfDay(addDays(now, days));
+  const out: ForecastDay[] = Array.from({ length: days }, (_, i) => ({ date: startOfDay(addDays(now, i)), sessions: [] }));
+
+  const sim = [...attempts];
+  let clock = now;
+  for (let guard = 0; guard < 60; guard++) {
+    const rec = recommend(sim, clock);
+    let at = new Date(Math.max(clock.getTime(), rec.earliestNext.getTime()));
+    if (at.getHours() < EARLIEST_HOUR || (!sameDay(at, clock) && at.getHours() < usualHour)) {
+      // First session of a new day: use the usual training hour
+      at = new Date(at);
+      at.setHours(usualHour, 0, 0, 0);
+    }
+    if (at.getHours() >= LATEST_HOUR) {
+      at = startOfDay(addDays(at, 1));
+      at.setHours(usualHour, 0, 0, 0);
+    }
+    if (at.getTime() >= end.getTime()) break;
+
+    const day = out.find((d) => sameDay(d.date, at));
+    day?.sessions.push({ at, targetSec: rec.targetSec, kind: rec.kind });
+    sim.push({ id: `forecast-${guard}`, startedAt: at.toISOString(), durationSec: rec.targetSec, events: [] });
+    clock = new Date(at.getTime() + rec.targetSec * 1000);
+  }
+  return out;
+}
