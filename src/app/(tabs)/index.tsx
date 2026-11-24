@@ -23,10 +23,13 @@ const KIND_ICON: Record<RecKind, string> = {
 
 export default function PlanScreen() {
   const t = useTheme();
-  const { data } = useStore();
+  const { data, engineOptions } = useStore();
   const now = useNow(15_000);
   const dog = data.dogName || 'your dog';
-  const rec = useMemo(() => recommend(data.attempts, now, data.dogName), [data.attempts, now, data.dogName]);
+  const rec = useMemo(
+    () => recommend(data.attempts, now, data.dogName, engineOptions),
+    [data.attempts, now, data.dogName, engineOptions],
+  );
   const ready = rec.earliestNext.getTime() <= now.getTime();
 
   const delta = rec.previousSec !== null ? rec.targetSec - rec.previousSec : null;
@@ -87,7 +90,7 @@ export default function PlanScreen() {
         </Card>
       )}
 
-      <ForecastCard attempts={data.attempts} now={now} dog={dog} />
+      <ForecastCard attempts={data.attempts} now={now} dog={dog} options={engineOptions} />
 
       <Card>
         <H2>Why {formatDuration(rec.targetSec)}?</H2>

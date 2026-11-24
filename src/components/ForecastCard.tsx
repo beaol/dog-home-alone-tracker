@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { forecast, type RecKind } from '../lib/engine';
+import { forecast, type EngineOptions, type RecKind } from '../lib/engine';
 import { formatDuration } from '../lib/format';
 import { useTheme } from '../lib/theme';
 import type { Attempt } from '../lib/types';
@@ -17,11 +17,21 @@ const KIND_WORD: Record<RecKind, string> = {
   goal: '★ goal',
 };
 
-export function ForecastCard({ attempts, now, dog }: { attempts: Attempt[]; now: Date; dog: string }) {
+export function ForecastCard({
+  attempts,
+  now,
+  dog,
+  options,
+}: {
+  attempts: Attempt[];
+  now: Date;
+  dog: string;
+  options: EngineOptions;
+}) {
   const t = useTheme();
   // Recompute once a minute at most
   const minute = Math.floor(now.getTime() / 60000);
-  const days = useMemo(() => forecast(attempts, new Date(minute * 60000)), [attempts, minute]);
+  const days = useMemo(() => forecast(attempts, new Date(minute * 60000), 5, options), [attempts, minute, options]);
 
   const dayLabel = (d: Date, i: number) =>
     i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'long' });

@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform } from 'react-native';
-import { Body, Button, Card, H1, H2, Input, Label, Screen } from '../../components/ui';
+import { Alert, Platform, Switch, View } from 'react-native';
+import { Body, Button, Card, H1, H2, Input, Label, Row, Screen } from '../../components/ui';
+import { useTheme } from '../../lib/theme';
 import { parseBackup, useStore } from '../../lib/store';
 
 function confirmAction(msg: string, onYes: () => void) {
@@ -13,7 +14,9 @@ function confirmAction(msg: string, onYes: () => void) {
 }
 
 export default function SettingsScreen() {
-  const { data, setDogName, replaceAll, reset } = useStore();
+  const { data, setDogName, setRestDays, replaceAll, reset } = useStore();
+  const restDaysOn = data.restDays !== false;
+  const t = useTheme();
   const [name, setName] = useState(data.dogName);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -70,6 +73,25 @@ export default function SettingsScreen() {
         <Label>Dog’s name</Label>
         <Input value={name} onChangeText={setName} onBlur={() => setDogName(name.trim())} placeholder="e.g. Luna" />
         <Button title="Save name" variant="secondary" onPress={() => { setDogName(name.trim()); setMsg('Name saved.'); }} />
+      </Card>
+
+      <Card>
+        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <View style={{ flex: 1 }}>
+            <H2>Rest days</H2>
+          </View>
+          <Switch
+            accessibilityLabel="Plan rest days"
+            value={restDaysOn}
+            onValueChange={setRestDays}
+            trackColor={{ true: t.accent, false: t.border }}
+          />
+        </Row>
+        <Body muted>
+          {restDaysOn
+            ? 'On: after 5 training days in a week, the app plans 2 days off. Malena DeMartini trains 5 days a week with 2 days off and says rest helps the dog keep what it has learned.'
+            : 'Off: the app plans sessions every day. The rest of the pacing still applies (a few minutes between absences, about 30 minutes of training a day, and stopping for the day after stress signs). DeMartini recommends 2 days off a week, so watch for signs of fatigue or regression.'}
+        </Body>
       </Card>
 
       <Card>

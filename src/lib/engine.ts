@@ -258,7 +258,17 @@ export function analyseHistory(sorted: Attempt[]): HistoryState {
 
 // ---------- recommendation ----------
 
-export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName = 'your dog'): Recommendation {
+export interface EngineOptions {
+  /** DeMartini's 5 training days / 2 days off per week. Default on. */
+  restDays?: boolean;
+}
+
+export function recommend(
+  attemptsIn: Attempt[],
+  now: Date = new Date(),
+  dogName = 'your dog',
+  options: EngineOptions = {},
+): Recommendation {
   const dog = dogName.trim() || 'your dog';
   const attempts = sortAttempts(attemptsIn);
   const reasons: Reason[] = [];
@@ -506,7 +516,7 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
   }
 
   // ---- when to do the next session ----
-  const w = nextSessionTime(attempts, now, target, lastOnset !== null, dog);
+  const w = nextSessionTime(attempts, now, target, lastOnset !== null, dog, options.restDays !== false);
 
   const headline =
     kind === 'stepBack'
@@ -542,7 +552,14 @@ export function recommend(attemptsIn: Attempt[], now: Date = new Date(), dogName
   };
 }
 
-function nextSessionTime(sorted: Attempt[], now: Date, target: number, lastStressed: boolean, dog: string) {
+function nextSessionTime(
+  sorted: Attempt[],
+  now: Date,
+  target: number,
+  lastStressed: boolean,
+  dog: string,
+  useRestDays: boolean,
+) {
   const last = sorted[sorted.length - 1];
   const lastEnd = attemptEnd(last);
   const reasons: Reason[] = [];
@@ -600,9 +617,9 @@ function nextSessionTime(sorted: Attempt[], now: Date, target: number, lastStres
   }
   repsLeftToday = Math.min(repsLeftToday, 6);
 
-  // Rest days: max 5 training days in any 7.
+  // Rest days: max 5 training days in any 7 (can be switched off in Settings).
   let restDays = 0;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; useRestDays && i < 7; i++) {
     const d = startOfDay(earliest);
     if (trainedDays.has(dayKey(d))) break; // continuing a day that already counts as a training day
     let count = 0;
@@ -656,7 +673,12 @@ const LATEST_HOUR = 21;
  * It runs the same `recommend()` rules over and over, so rest days, easy sessions and
  * repeats show up exactly as the app would suggest them.
  */
-export function forecast(attemptsIn: Attempt[], now: Date = new Date(), days = 5): ForecastDay[] {
+export function forecast(
+  attemptsIn: Attempt[],
+  now: Date = new Date(),
+  days = 5,
+  options: EngineOptions = {},
+): ForecastDay[] {
   const attempts = sortAttempts(attemptsIn);
   const last = attempts[attempts.length - 1];
   // Use the hour you usually train (your last session), within daytime.
@@ -667,7 +689,7 @@ export function forecast(attemptsIn: Attempt[], now: Date = new Date(), days = 5
   const sim = [...attempts];
   let clock = now;
   for (let guard = 0; guard < 60; guard++) {
-    const rec = recommend(sim, clock);
+    const rec = recommend(sim, clock, undefined, options);
     let at = new Date(Math.max(clock.getTime(), rec.earliestNext.getTime()));
     if (at.getHours() < EARLIEST_HOUR || (!sameDay(at, clock) && at.getHours() < usualHour)) {
       // First session of a new day: use the usual training hour

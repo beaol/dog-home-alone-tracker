@@ -13,11 +13,14 @@ import { useNow } from '../../lib/useNow';
 const NEXT_INTENSITY: Record<Intensity, Intensity> = { brief: 'intermittent', intermittent: 'continuous', continuous: 'brief' };
 
 export default function LogScreen() {
-  const { data, setLive, saveAttempt } = useStore();
+  const { data, setLive, saveAttempt, engineOptions } = useStore();
   const [mode, setMode] = useState<'choose' | 'manual' | 'review'>('choose');
   const [review, setReview] = useState<Attempt | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
-  const rec = useMemo(() => recommend(data.attempts, new Date(), data.dogName), [data.attempts, data.dogName]);
+  const rec = useMemo(
+    () => recommend(data.attempts, new Date(), data.dogName, engineOptions),
+    [data.attempts, data.dogName, engineOptions],
+  );
 
   const onSaved = (a: Attempt) => {
     saveAttempt(a);

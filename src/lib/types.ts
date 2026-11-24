@@ -43,6 +43,8 @@ export interface AppData {
   onboarded: boolean;
   attempts: Attempt[];
   live?: LiveSession | null;
+  /** Plan 2 rest days a week (DeMartini). Undefined = on. */
+  restDays?: boolean;
 }
 
 export const VOCAL_KINDS: VocalKind[] = ['whine', 'bark', 'howl'];

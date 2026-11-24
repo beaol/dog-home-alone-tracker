@@ -12,10 +12,13 @@ type Range = 14 | 30 | 'all';
 
 export default function ProgressScreen() {
   const t = useTheme();
-  const { data } = useStore();
+  const { data, engineOptions } = useStore();
   const [range, setRange] = useState<Range>(14);
   const sorted = useMemo(() => sortAttempts(data.attempts), [data.attempts]);
-  const rec = useMemo(() => recommend(data.attempts, new Date(), data.dogName), [data.attempts, data.dogName]);
+  const rec = useMemo(
+    () => recommend(data.attempts, new Date(), data.dogName, engineOptions),
+    [data.attempts, data.dogName, engineOptions],
+  );
   const shown = range === 'all' ? sorted : sorted.slice(-range);
 
   const calm = sorted.filter((a) => stressOnset(a) === null);

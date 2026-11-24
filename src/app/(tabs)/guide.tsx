@@ -36,7 +36,7 @@ const PRINCIPLES: { title: string; items: Reason[] }[] = [
     title: '4. Rhythm and rest',
     items: [
       { text: 'Wait a few minutes between absences (the app uses 5 min), until your dog is relaxed.', basis: 'source', sources: ['aspca', 'vca'] },
-      { text: 'About 20–30 minutes of training a day, 5 days a week with 2 days off. Rest helps learning; more training does not speed it up.', basis: 'source', sources: ['demartini-less'] },
+      { text: 'About 20–30 minutes of training a day, 5 days a week with 2 days off. Rest helps learning; more training does not speed it up. You can switch rest days off in Settings.', basis: 'source', sources: ['demartini-less'] },
       { text: 'The 30-minute daily limit is for short practice absences done several in a row. It is not a limit on how long your dog can be alone. Once absences are 30 minutes or longer, the app plans one per day, all the way up to 8 hours.', basis: 'app', sources: ['demartini-less', 'aspca'] },
     ],
   },

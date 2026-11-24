@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { EngineOptions } from './engine';
 import type { AppData, Attempt, LiveSession } from './types';
 
 const KEY = 'dog-home-alone-tracker/v1';
@@ -12,6 +13,9 @@ interface Store {
   saveAttempt: (a: Attempt) => void;
   deleteAttempt: (id: string) => void;
   setDogName: (name: string) => void;
+  setRestDays: (on: boolean) => void;
+  /** Options for the recommendation engine, from the user's settings */
+  engineOptions: EngineOptions;
   completeOnboarding: (dogName: string, attempts: Attempt[]) => void;
   setLive: (live: LiveSession | null) => void;
   replaceAll: (data: AppData) => void;
@@ -32,7 +36,14 @@ export function parseBackup(json: string): AppData {
       events: Array.isArray(a.events) ? a.events : [],
       notes: typeof a.notes === 'string' ? a.notes : undefined,
     }));
-  return { version: 1, dogName: String(raw.dogName ?? ''), onboarded: true, attempts, live: null };
+  return {
+    version: 1,
+    dogName: String(raw.dogName ?? ''),
+    onboarded: true,
+    attempts,
+    live: null,
+    restDays: raw.restDays === false ? false : undefined,
+  };
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -71,6 +82,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       saveAttempt,
       deleteAttempt: (id) => setData((d) => ({ ...d, attempts: d.attempts.filter((x) => x.id !== id) })),
       setDogName: (dogName) => setData((d) => ({ ...d, dogName })),
+      setRestDays: (restDays) => setData((d) => ({ ...d, restDays })),
+      engineOptions: { restDays: data.restDays !== false },
       completeOnboarding: (dogName, attempts) => setData((d) => ({ ...d, dogName, attempts, onboarded: true })),
       setLive: (live) => setData((d) => ({ ...d, live })),
       replaceAll: (next) => setData(next),
