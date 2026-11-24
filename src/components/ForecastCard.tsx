@@ -1,52 +1,39 @@
+import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Text, View } from 'react-native';
-import { forecast, type EngineOptions, type RecKind } from '../lib/engine';
+import { forecast, type EngineOptions, type ForecastDay, type RecKind } from '../lib/engine';
 import { formatDuration } from '../lib/format';
 import { useTheme } from '../lib/theme';
 import type { Attempt } from '../lib/types';
-import { Body, Card, H2 } from './ui';
+import { Body, Button, Card, H2 } from './ui';
 
-const KIND_WORD: Record<RecKind, string> = {
+export const KIND_WORD: Record<RecKind, string> = {
   start: 'start',
   increase: '▲ up',
   repeat: '● repeat',
   recheck: '↩ last calm',
   stepBack: '▼ step back',
-  easy: '◐ easy',
+  easy: '○ easy',
   warmup: '↺ warm-up',
   goal: '★ goal',
 };
 
-export function ForecastCard({
-  attempts,
-  now,
-  dog,
-  options,
-}: {
-  attempts: Attempt[];
-  now: Date;
-  dog: string;
-  options: EngineOptions;
-}) {
+export function dayLabel(d: Date, now: Date): string {
+  const diff = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / 86_400_000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  return d.toLocaleDateString(undefined, { weekday: 'long' });
+}
+
+/** One row per day: its absences, or "Rest day". */
+export function ForecastDayList({ days, now, dog }: { days: ForecastDay[]; now: Date; dog: string }) {
   const t = useTheme();
-  // Recompute once a minute at most
-  const minute = Math.floor(now.getTime() / 60000);
-  const days = useMemo(() => forecast(attempts, new Date(minute * 60000), 5, options), [attempts, minute, options]);
-
-  const dayLabel = (d: Date, i: number) =>
-    i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'long' });
-
   return (
-    <Card>
-      <H2>The next 5 days</H2>
-      <Body muted>
-        If {dog} is calm every time and each session hits its target, this is how the plan continues. Any stress sign changes it, so
-        treat it as a preview, not a schedule.
-      </Body>
-      {days.map((d, i) => (
+    <View>
+      {days.map((d) => (
         <View key={d.date.toISOString()} style={{ flexDirection: 'row', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: t.border }}>
           <View style={{ width: 92 }}>
-            <Text style={{ color: t.text, fontWeight: '700', fontSize: 15 }}>{dayLabel(d.date, i)}</Text>
+            <Text style={{ color: t.text, fontWeight: '700', fontSize: 15 }}>{dayLabel(d.date, now)}</Text>
             <Text style={{ color: t.textMuted, fontSize: 12 }}>{d.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</Text>
           </View>
           <View style={{ flex: 1, gap: 4 }}>
@@ -70,6 +57,38 @@ export function ForecastCard({
           </View>
         </View>
       ))}
+    </View>
+  );
+}
+
+export function ForecastCard({
+  attempts,
+  now,
+  dog,
+  options,
+}: {
+  attempts: Attempt[];
+  now: Date;
+  dog: string;
+  options: EngineOptions;
+}) {
+  // Recompute once a minute at most
+  const minute = Math.floor(now.getTime() / 60000);
+  const days = useMemo(() => forecast(attempts, new Date(minute * 60000), 5, options), [attempts, minute, options]);
+
+  return (
+    <Card>
+      <H2>The next 5 days</H2>
+      <Body muted>
+        If {dog} is calm every time and each session hits its target, this is how the plan continues. Any stress sign changes it, so
+        treat it as a preview, not a schedule.
+      </Body>
+      <ForecastDayList days={days} now={new Date(minute * 60000)} dog={dog} />
+      <Button
+        title="See longer forecast"
+        variant="secondary"
+        onPress={() => router.navigate({ pathname: '/progress', params: { view: 'forecast' } })}
+      />
     </Card>
   );
 }

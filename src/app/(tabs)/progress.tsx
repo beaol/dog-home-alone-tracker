@@ -1,6 +1,7 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { ForecastView } from '../../components/ForecastView';
 import { ProgressChart } from '../../components/ProgressChart';
 import { Body, Card, Chip, H1, H2, Label, Row, Screen } from '../../components/ui';
 import { analyseHistory, recommend, roundDuration, sortAttempts, stressOnset } from '../../lib/engine';
@@ -13,6 +14,8 @@ type Range = 14 | 30 | 'all';
 export default function ProgressScreen() {
   const t = useTheme();
   const { data, engineOptions } = useStore();
+  const params = useLocalSearchParams<{ view?: string }>();
+  const view = params.view === 'forecast' ? 'forecast' : 'history';
   const [range, setRange] = useState<Range>(14);
   const sorted = useMemo(() => sortAttempts(data.attempts), [data.attempts]);
   const rec = useMemo(
@@ -31,6 +34,18 @@ export default function ProgressScreen() {
   return (
     <Screen>
       <H1>Progress</H1>
+      <Segmented
+        value={view}
+        options={[
+          { value: 'history', label: 'History' },
+          { value: 'forecast', label: 'Forecast' },
+        ]}
+        onChange={(v) => router.setParams({ view: v })}
+      />
+      {view === 'forecast' ? (
+        <ForecastView attempts={data.attempts} dog={data.dogName || 'your dog'} options={engineOptions} />
+      ) : (
+      <>
       <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         <Stat label="Calm level now" value={comfort !== null ? formatDuration(comfort) : '–'} />
         <Stat label="Longest calm" value={bestCalm ? formatDuration(bestCalm) : '–'} />
@@ -71,6 +86,8 @@ export default function ProgressScreen() {
           );
         })}
       </Card>
+      </>
+      )}
     </Screen>
   );
 }
@@ -92,6 +109,36 @@ function Stat({ label, value }: { label: string; value: string }) {
     >
       <Label>{label}</Label>
       <Text style={{ color: t.text, fontSize: 22, fontWeight: '700' }}>{value}</Text>
+    </View>
+  );
+}
+
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  const t = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', backgroundColor: t.surfaceAlt, borderRadius: 10, padding: 3 }}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => onChange(o.value)}
+            style={{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: on ? t.surface : 'transparent' }}
+          >
+            <Text style={{ color: on ? t.text : t.textSecondary, fontWeight: on ? '700' : '500', fontSize: 15 }}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

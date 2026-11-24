@@ -688,7 +688,8 @@ export function forecast(
 
   const sim = [...attempts];
   let clock = now;
-  for (let guard = 0; guard < 60; guard++) {
+  // Enough iterations for several short absences a day over the whole horizon
+  for (let guard = 0; guard < Math.max(60, days * 15); guard++) {
     const rec = recommend(sim, clock, undefined, options);
     let at = new Date(Math.max(clock.getTime(), rec.earliestNext.getTime()));
     if (at.getHours() < EARLIEST_HOUR || (!sameDay(at, clock) && at.getHours() < usualHour)) {
@@ -708,4 +709,21 @@ export function forecast(
     clock = new Date(at.getTime() + rec.targetSec * 1000);
   }
   return out;
+}
+
+/** When the 8-hour goal would be reached if every session from now on is calm (searches up to `maxDays`). */
+export function forecastGoal(
+  attempts: Attempt[],
+  now: Date = new Date(),
+  options: EngineOptions = {},
+  maxDays = 240,
+): { at: Date; sessions: number } | null {
+  let sessions = 0;
+  for (const day of forecast(attempts, now, maxDays, options)) {
+    for (const s of day.sessions) {
+      sessions++;
+      if (s.kind === 'goal') return { at: s.at, sessions };
+    }
+  }
+  return null;
 }
